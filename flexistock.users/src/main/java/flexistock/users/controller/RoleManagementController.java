@@ -6,6 +6,8 @@ import flexistock.users.service.AuthenticationService;
 import flexistock.users.service.RoleManagementService;
 import flexistock.users.service.UserService;
 import flexistock.users.util.UserViewMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,6 +21,8 @@ import java.util.UUID;
 
 @RestController
 public class RoleManagementController {
+    private static final Logger logger = LoggerFactory.getLogger(RoleManagementController.class);
+
     private final RoleManagementService roleManagementService;
     private final AuthenticationService authenticationService;
     private final UserService userService;
@@ -36,6 +40,7 @@ public class RoleManagementController {
     @PostMapping("/request-admin-access")
     public UserActionResponseDto requestAdminAccess(@RequestHeader("X-Auth-Token") String token) {
         UUID requesterId = authenticationService.getUserIdFromToken(token);
+        logger.info("Admin access request submitted by userId={}", requesterId);
         User updated = roleManagementService.requestAdminAccess(requesterId);
         return new UserActionResponseDto(true, "Admin access request submitted", UserViewMapper.toResponse(updated));
     }
@@ -49,6 +54,7 @@ public class RoleManagementController {
         UUID requesterId = authenticationService.getUserIdFromToken(token);
         requireAdmin(requesterId);
 
+        logger.info("User role update requested by admin userId={} targetUserId={} approve={}", requesterId, id, request.approve());
         User updated = roleManagementService.updateUserRole(id, request.approve());
         return new UserActionResponseDto(
                 true,
@@ -59,6 +65,7 @@ public class RoleManagementController {
 
     private void requireAdmin(UUID userId) {
         if (!userService.isAdmin(userId)) {
+            logger.warn("Admin role-management access denied for userId={}", userId);
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required");
         }
     }

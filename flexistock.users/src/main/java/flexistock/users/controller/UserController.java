@@ -7,6 +7,8 @@ import flexistock.users.dto.response.UserResponseDto;
 import flexistock.users.service.AuthenticationService;
 import flexistock.users.service.UserService;
 import flexistock.users.util.UserViewMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +25,8 @@ import java.util.UUID;
 
 @RestController
 public class UserController {
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+
     private final UserService userService;
     private final AuthenticationService authenticationService;
 
@@ -35,13 +39,22 @@ public class UserController {
     public List<UserResponseDto> getAllUsers(@RequestHeader("X-Auth-Token") String token) {
         UUID requesterId = authenticationService.getUserIdFromToken(token);
         requireAdmin(requesterId);
+        logger.debug("All users requested by admin userId={}", requesterId);
         return userService.getAllUsers().stream().map(UserViewMapper::toResponse).toList();
+    }
+
+    @GetMapping("/users/admin-emails")
+    public List<String> getAdminEmails(@RequestHeader("X-Auth-Token") String token) {
+        UUID requesterId = authenticationService.getUserIdFromToken(token);
+        logger.debug("Admin email recipient list requested by userId={}", requesterId);
+        return userService.getAdminEmails();
     }
 
     @GetMapping("/users/{id}")
     public UserResponseDto getUser(@PathVariable UUID id, @RequestHeader("X-Auth-Token") String token) {
         UUID requesterId = authenticationService.getUserIdFromToken(token);
         requireOwnerOrAdmin(requesterId, id);
+        logger.debug("User details requested by requesterId={} targetUserId={}", requesterId, id);
         return UserViewMapper.toResponse(userService.getUser(id));
     }
 
@@ -54,6 +67,7 @@ public class UserController {
         UUID requesterId = authenticationService.getUserIdFromToken(token);
         requireOwnerOrAdmin(requesterId, id);
 
+        logger.info("User update requested by requesterId={} targetUserId={}", requesterId, id);
         User updated = userService.updateUser(id, request.name(), request.email(), request.password());
         return new UserActionResponseDto(true, "User updated successfully", UserViewMapper.toResponse(updated));
     }
@@ -62,18 +76,21 @@ public class UserController {
     public MessageResponseDto deleteUser(@PathVariable UUID id, @RequestHeader("X-Auth-Token") String token) {
         UUID requesterId = authenticationService.getUserIdFromToken(token);
         requireOwnerOrAdmin(requesterId, id);
+        logger.info("User delete requested by requesterId={} targetUserId={}", requesterId, id);
         userService.deleteUser(id);
         return new MessageResponseDto(true, "User deleted successfully");
     }
 
     private void requireAdmin(UUID userId) {
         if (!userService.isAdmin(userId)) {
+            logger.warn("Admin user listing access denied for userId={}", userId);
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required");
         }
     }
 
     private void requireOwnerOrAdmin(UUID requesterId, UUID targetUserId) {
         if (!requesterId.equals(targetUserId) && !userService.isAdmin(requesterId)) {
+            logger.warn("User access denied requesterId={} targetUserId={}", requesterId, targetUserId);
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient permissions");
         }
     }

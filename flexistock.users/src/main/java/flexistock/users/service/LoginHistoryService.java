@@ -3,6 +3,8 @@ package flexistock.users.service;
 import flexistock.users.dto.response.LoginHistoryItemDto;
 import flexistock.users.entity.LoginHistoryEntity;
 import flexistock.users.repository.LoginHistoryRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -11,6 +13,8 @@ import java.util.UUID;
 
 @Service
 public class LoginHistoryService {
+    private static final Logger logger = LoggerFactory.getLogger(LoginHistoryService.class);
+
     private final LoginHistoryRepository loginHistoryRepository;
 
     public LoginHistoryService(LoginHistoryRepository loginHistoryRepository) {
@@ -23,9 +27,11 @@ public class LoginHistoryService {
         entry.setEmail(email);
         entry.setLoggedInAt(Instant.parse(loggedInAt));
         loginHistoryRepository.save(entry);
+        logger.debug("Recorded login history entry for userId={} email={}", userId, email);
     }
 
     public List<LoginHistoryItemDto> getLoginHistory() {
+        logger.debug("Fetching login history records");
         return loginHistoryRepository.findAll().stream()
                 .map(entry -> new LoginHistoryItemDto(
                         entry.getUserId(),
