@@ -2,6 +2,7 @@ package flexistock.inventory.controller;
 
 import flexistock.inventory.dto.InventoryLogResponseDto;
 import flexistock.inventory.dto.ProductResponseDto;
+import flexistock.inventory.dto.request.BulkCreateProductRequest;
 import flexistock.inventory.dto.request.CreateProductRequest;
 import flexistock.inventory.dto.request.QuantityAdjustmentRequest;
 import flexistock.inventory.dto.request.UpdateProductRequest;
