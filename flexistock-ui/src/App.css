@@ -1,0 +1,471 @@
+.app-shell {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 100vh;
+  background: #ffffff;
+  color: #111111;
+}
+
+.sidebar {
+  background: #c8102e;
+  color: #ffffff;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.brand {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
+}
+
+.sidebar-user {
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-user p {
+  margin: 0;
+  color: #ffffff;
+}
+
+.sidebar-role {
+  color: #ffffff;
+  margin-top: 4px;
+}
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.sidebar button {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #ffffff;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.sidebar button.active {
+  background: #000000;
+  color: #ffffff;
+}
+
+.sidebar button:hover {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.sidebar button.danger {
+  background: #ffffff;
+  color: #000000;
+  margin-top: auto;
+  font-weight: 700;
+  font-style: normal;
+  border: 2px solid #ffffff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+.sidebar button.danger:hover,
+.sidebar button.danger:focus {
+  background: rgba(255, 255, 255, 0.95);
+  color: #000000;
+}
+
+.main-content {
+  padding: 24px;
+  max-width: 100%;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.top-bar h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.top-note {
+  margin: 6px 0 0;
+  color: #6b7280;
+}
+
+.toggle-button,
+.primary-button,
+.secondary-button,
+.small-button {
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.primary-button {
+  background: #c8102e;
+  color: white;
+  padding: 10px 18px;
+}
+
+.secondary-button {
+  background: #000000;
+  color: #ffffff;
+  padding: 10px 18px;
+}
+
+.toggle-button {
+  background: #000000;
+  color: #ffffff;
+  padding: 10px 18px;
+}
+
+.small-button {
+  background: #f8f8f8;
+  color: #111111;
+  padding: 8px 12px;
+}
+
+.danger {
+  background: #a50b1e;
+  color: white;
+}
+
+.badge {
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 18px;
+}
+
+.badge.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge.info {
+  background: #fff1f2;
+  color: #88111d;
+}
+
+.auth-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
+}
+
+.auth-card {
+  width: min(520px, 100%);
+  max-width: 520px;
+  background: white;
+  padding: 32px;
+  border-radius: 24px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.12);
+  margin: 24px 0;
+}
+
+.auth-card h2 {
+  margin-top: 0;
+}
+
+.auth-card label {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.auth-card input,
+.auth-card textarea,
+.product-form input,
+.product-form textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #f8fafc;
+}
+
+.auth-switch {
+  margin-top: 16px;
+  color: #475569;
+}
+
+.auth-switch button {
+  border: none;
+  background: transparent;
+  color: #c8102e;
+  cursor: pointer;
+}
+
+.auth-hero {
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: #c8102e;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.auth-hero h2 {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.auth-description {
+  margin: 12px 0 0;
+  color: #475569;
+  line-height: 1.7;
+}
+
+.auth-submit-button {
+  width: 100%;
+}
+
+.inventory-page,
+.product-detail-page,
+.product-form-page {
+  background: white;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
+}
+
+.product-detail-page,
+.product-form-page {
+  display: grid;
+  gap: 24px;
+}
+
+.page-action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.product-detail-card {
+  padding: 24px;
+  border-radius: 24px;
+  background: white;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
+}
+
+.product-detail-card h2 {
+  margin-top: 0;
+}
+
+.product-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.content-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.content-actions button {
+  min-width: 110px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.content-actions .secondary-button,
+.content-actions .danger {
+  border-radius: 10px;
+}
+
+.quantity-update {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.quantity-update label {
+  width: 100%;
+}
+
+.quantity-update input {
+  width: 100%;
+  max-width: 220px;
+}
+
+.quantity-update button {
+  width: auto;
+  min-width: 180px;
+  padding: 12px 22px;
+}
+
+@media (max-width: 1120px) {
+  .product-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.inventory-panel,
+.users-panel,
+.metrics-panel,
+.profile-panel,
+.form-panel,
+.detail-card {
+  background: white;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
+}
+
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  padding: 14px 12px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.data-table tbody tr.low-stock {
+  background: #fff7ef;
+}
+
+.actions-cell button {
+  margin-right: 8px;
+}
+
+.link-button {
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  cursor: pointer;
+  padding: 0;
+}
+
+.detail-panel {
+  display: grid;
+  gap: 24px;
+}
+
+.detail-card {
+  border-radius: 24px;
+}
+
+.quantity-update {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.product-form label {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.attributes-section {
+  margin-top: 20px;
+  margin-bottom: 24px;
+}
+
+.attribute-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.metric-card,
+.profile-card,
+.stat-card,
+.recent-card {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 18px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.dashboard-actions {
+  grid-column: span 3;
+  display: flex;
+  gap: 12px;
+}
+
+.recent-card ul {
+  padding-left: 18px;
+  margin: 0;
+}
+
+.loading {
+  padding: 20px;
+  color: #475569;
+}
+
+@media (max-width: 1120px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .content-grid,
+  .dashboard-grid,
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+}
