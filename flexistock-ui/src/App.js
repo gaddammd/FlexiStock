@@ -5,17 +5,21 @@ import {
   createProduct,
   deleteProduct,
   fetchProducts,
+  fetchReceipts,
   fetchUsers,
   login,
   requestAdminAccess,
+  receiptsUrl,
   signup,
   updateProduct,
   updateUserRole,
+  uploadReceipt,
   validateToken,
 } from './api';
 import AuthShell from './components/AuthShell';
 import ProductDetail from './components/ProductDetail';
 import ProductForm from './components/ProductForm';
+import ReceiptUpload from './components/ReceiptUpload';
 import Sidebar from './components/Sidebar';
 
 const STORAGE_KEY = {
@@ -56,6 +60,51 @@ function App() {
   const [authMode, setAuthMode] = useState('login');
   const [authForm, setAuthForm] = useState({ name: '', email: '', password: '' });
 
+  const handleAuthChange = (field, value) => {
+    setAuthForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleLogin = async (event) => {
+    event.preventDefault();
+    setError('');
+    setInfo('');
+
+    try {
+      const loginResult = await login(authForm.email, authForm.password);
+      const tokenValue = typeof loginResult === 'string' ? loginResult : loginResult?.token;
+      if (!tokenValue) {
+        throw new Error('Invalid login response');
+      }
+
+      setToken(tokenValue);
+      localStorage.setItem(STORAGE_KEY.token, tokenValue);
+
+      if (loginResult?.user) {
+        setUser(loginResult.user);
+        localStorage.setItem(STORAGE_KEY.user, JSON.stringify(loginResult.user));
+      }
+
+      setInfo('Logged in successfully');
+      setAuthForm({ name: '', email: '', password: '' });
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortKey, setSortKey] = useState('name');
+  const [sortDirection, setSortDirection] = useState('asc');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [filterStock, setFilterStock] = useState('all');
+  const [notifications, setNotifications] = useState({});
+  const [receipts, setReceipts] = useState([]);
+  const [receiptForm, setReceiptForm] = useState({
+    file: null,
+    storeName: '',
+    description: '',
+    date: new Date().toISOString().slice(0, 10),
+  });
+
   useEffect(() => {
     if (!info) {
       return;
@@ -69,6 +118,67 @@ function App() {
   }, [info]);
 
   const isAdmin = useMemo(() => user?.role?.toLowerCase() === 'admin', [user]);
+  const categories = useMemo(() => {
+    return Array.from(new Set(products.map((product) => product.category || '').filter(Boolean))).sort();
+  }, [products]);
+  const userNotifications = useMemo(() => {
+    if (!user?.id) {
+      return [];
+    }
+    return notifications[user.id] || [];
+  }, [notifications, user]);
+
+  const displayProducts = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    const filtered = products
+      .filter((product) => {
+        if (!normalizedQuery) {
+          return true;
+        }
+
+        const haystack = [product.name, product.sku, product.category, product.location, product.description]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        return haystack.includes(normalizedQuery);
+      })
+      .filter((product) => {
+        if (filterCategory === 'all') {
+          return true;
+        }
+        return product.category === filterCategory;
+      })
+      .filter((product) => {
+        if (filterStock === 'all') {
+          return true;
+        }
+
+        const lowStockThreshold = product.lowStockThreshold ?? 10;
+        const isLow = product.quantity <= lowStockThreshold;
+
+        if (filterStock === 'low') {
+          return isLow;
+        }
+        if (filterStock === 'in-stock') {
+          return !isLow;
+        }
+        return true;
+      });
+
+    return filtered.sort((a, b) => {
+      const direction = sortDirection === 'asc' ? 1 : -1;
+
+      if (sortKey === 'quantity') {
+        return direction * ((a.quantity ?? 0) - (b.quantity ?? 0));
+      }
+
+      const aValue = (a[sortKey] || '').toString().toLowerCase();
+      const bValue = (b[sortKey] || '').toString().toLowerCase();
+      return direction * aValue.localeCompare(bValue);
+    });
+  }, [products, searchQuery, filterCategory, filterStock, sortKey, sortDirection]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY.dbMode, dbMode);
@@ -129,35 +239,132 @@ function App() {
     }
   }, [token]);
 
-  useEffect(() => {
-    if (token) {
-      loadProducts();
-      if (isAdmin && page === 'users') {
-        loadUsers();
-      }
-    }
-  }, [token, page, isAdmin, loadProducts, loadUsers]);
-
-  const handleAuthChange = (field, value) => {
-    setAuthForm((prev) => ({ ...prev, [field]: value }));
+  const handleNotifyUser = (userId) => {
+    setNotifications((prev) => ({
+      ...prev,
+      [userId]: [
+        ...(prev[userId] || []),
+        {
+          id: Date.now(),
+          message: 'You have a package waiting in the suite.',
+          receivedAt: new Date().toLocaleString(),
+        },
+      ],
+    }));
+    setInfo('Package notification sent to user');
   };
 
-  const handleLogin = async (event) => {
+  const handleDismissNotification = (notificationId) => {
+    if (!user?.id) {
+      return;
+    }
+    setNotifications((prev) => ({
+      ...prev,
+      [user.id]: (prev[user.id] || []).filter((note) => note.id !== notificationId),
+    }));
+    setInfo('Notification removed');
+  };
+
+  const handleReceiptFormChange = (field, value) => {
+    setReceiptForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleReceiptFileChange = (file) => {
+    setReceiptForm((prev) => ({ ...prev, file }));
+  };
+
+  const loadReceipts = useCallback(async () => {
+    if (!token) {
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const result = await fetchReceipts(token, dbMode);
+      setReceipts(result || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [token, dbMode]);
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+    loadProducts();
+  }, [token, dbMode, loadProducts]);
+
+  useEffect(() => {
+    if (page !== 'receipts' || !isAdmin) {
+      return;
+    }
+    loadReceipts();
+  }, [page, isAdmin, loadReceipts]);
+
+  const handleReceiptSubmit = async (event) => {
     event.preventDefault();
     setError('');
     setInfo('');
 
+    if (!receiptForm.file) {
+      setError('Please select a PDF to upload.');
+      return;
+    }
+    if (!receiptForm.storeName.trim()) {
+      setError('Please enter the store name.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', receiptForm.file);
+    formData.append('receiptFile', receiptForm.file);
+    formData.append('pdfReceipt', receiptForm.file);
+    formData.append('storeName', receiptForm.storeName.trim());
+    formData.append('description', receiptForm.description.trim());
+    formData.append('receiptDate', receiptForm.date);
+
     try {
-      const response = await login(authForm.email, authForm.password);
-      localStorage.setItem(STORAGE_KEY.token, response.token);
-      setToken(response.token);
-      setInfo('Login successful');
-      setAuthForm({ name: '', email: '', password: '' });
-      setPage('dashboard');
+      const uploadedReceipt = await uploadReceipt(token, formData, dbMode);
+      setReceipts((prev) => [uploadedReceipt, ...prev]);
+      setReceiptForm({
+        file: null,
+        storeName: '',
+        description: '',
+        date: new Date().toISOString().slice(0, 10),
+      });
+      setInfo(uploadedReceipt?.message || 'Receipt uploaded successfully');
     } catch (err) {
       setError(err.message);
     }
   };
+
+    const downloadReceiptFile = async (receiptId) => {
+      setError('');
+      setLoading(true);
+      try {
+        const response = await fetch(`${receiptsUrl(dbMode)}/${receiptId}/file`, {
+          method: 'GET',
+          headers: {
+            'X-Auth-Token': token,
+          },
+        });
+
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || response.statusText || 'Failed to download receipt');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
   const handleSignup = async (event) => {
     event.preventDefault();
@@ -346,6 +553,14 @@ function App() {
     }
   }, [selectedProduct]);
 
+  const resetInventoryFilters = () => {
+    setSearchQuery('');
+    setSortKey('name');
+    setSortDirection('asc');
+    setFilterCategory('all');
+    setFilterStock('all');
+  };
+
   const handleRequestAdmin = async () => {
     setError('');
     setInfo('');
@@ -359,8 +574,8 @@ function App() {
     }
   };
 
-  const lowStockCount = products.filter((product) => product.quantity <= (product.lowStockThreshold ?? 10)).length;
-  const recentItems = products.slice(0, 5);
+  const lowStockItems = products.filter((product) => product.quantity <= (product.lowStockThreshold ?? 10));
+  const lowStockCount = lowStockItems.length;
 
 
   const inventorySection = (
@@ -373,6 +588,66 @@ function App() {
               Add New Item
             </button>
           )}
+        </div>
+      </div>
+
+      <div className="inventory-controls">
+        <label className="search-input">
+          <span className="search-label">Search inventory</span>
+          <div className="search-field">
+            <span className="search-icon">🔍</span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search name, SKU, category, location"
+            />
+          </div>
+        </label>
+
+        <div className="inventory-action-row">
+          <label className="control-chip">
+            <span className="chip-icon">🧩</span>
+            <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
+              <option value="all">Category: All</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="control-chip">
+            <span className="chip-icon">⚠️</span>
+            <select value={filterStock} onChange={(e) => setFilterStock(e.target.value)}>
+              <option value="all">Stock: All</option>
+              <option value="low">Low stock only</option>
+              <option value="in-stock">In stock</option>
+            </select>
+          </label>
+
+          <label className="control-chip">
+            <span className="chip-icon">↕️</span>
+            <select value={sortKey} onChange={(e) => setSortKey(e.target.value)}>
+              <option value="name">Sort: Name</option>
+              <option value="category">Sort: Category</option>
+              <option value="quantity">Sort: Quantity</option>
+              <option value="location">Sort: Location</option>
+            </select>
+          </label>
+
+          <label className="control-chip">
+            <span className="chip-icon">🔽</span>
+            <select value={sortDirection} onChange={(e) => setSortDirection(e.target.value)}>
+              <option value="asc">Asc</option>
+              <option value="desc">Desc</option>
+            </select>
+          </label>
+
+          <button type="button" className="reset-button small-button" onClick={resetInventoryFilters}>
+            Reset
+          </button>
         </div>
       </div>
 
@@ -390,29 +665,35 @@ function App() {
             </tr>
           </thead>
           <tbody>
-            {products.map((product) => (
-              <tr key={product.id} className={product.quantity <= (product.lowStockThreshold ?? 10) ? 'low-stock' : ''}>
-                <td>{product.name}</td>
-                <td>{product.category}</td>
-                <td>{product.quantity}</td>
-                <td>{product.location || '-'}</td>
-                <td className="actions-cell">
-                  <button className="link-button" onClick={() => handleViewProduct(product)}>
-                    View
-                  </button>
-                  {isAdmin && (
-                    <>
-                      <button className="link-button" onClick={() => openEditProduct(product)}>
-                        Edit
-                      </button>
-                      <button className="link-button danger" onClick={() => handleDeleteProduct(product.id)}>
-                        Delete
-                      </button>
-                    </>
-                  )}
-                </td>
+            {displayProducts.length ? (
+              displayProducts.map((product) => (
+                <tr key={product.id} className={product.quantity <= (product.lowStockThreshold ?? 10) ? 'low-stock' : ''}>
+                  <td>{product.name}</td>
+                  <td>{product.category}</td>
+                  <td>{product.quantity}</td>
+                  <td>{product.location || '-'}</td>
+                  <td className="actions-cell">
+                    <button className="link-button" onClick={() => handleViewProduct(product)}>
+                      View
+                    </button>
+                    {isAdmin && (
+                      <>
+                        <button className="link-button" onClick={() => openEditProduct(product)}>
+                          Edit
+                        </button>
+                        <button className="link-button danger" onClick={() => handleDeleteProduct(product.id)}>
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="5">No products match your search or filters.</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       )}
@@ -474,7 +755,10 @@ function App() {
                 <td>{userItem.email}</td>
                 <td>{userItem.role}</td>
                 <td>{userItem.adminAccessRequested ? 'Requested' : 'None'}</td>
-                <td>
+                <td className="actions-cell">
+                  <button className="link-button" onClick={() => handleNotifyUser(userItem.id)}>
+                    Notify Package
+                  </button>
                   {userItem.role?.toLowerCase() !== 'admin' ? (
                     <button className="link-button" onClick={() => handleUserRoleUpdate(userItem.id, true)}>
                       Make Admin
@@ -490,6 +774,107 @@ function App() {
           </tbody>
         </table>
       )}
+    </section>
+  );
+
+  const receiptsSection = (
+    <section className="receipt-upload-page">
+      <div className="page-action-bar">
+        <h2>Receipt Upload</h2>
+      </div>
+      <form className="receipt-form" onSubmit={handleReceiptSubmit}>
+        <label>
+          PDF Receipt
+          <input
+            type="file"
+            accept="application/pdf"
+            onChange={(e) => handleReceiptFileChange(e.target.files?.[0] || null)}
+          />
+        </label>
+        <label>
+          Store name
+          <input
+            value={receiptForm.storeName}
+            onChange={(e) => handleReceiptFormChange('storeName', e.target.value)}
+          />
+        </label>
+        <label>
+          Description
+          <textarea
+            value={receiptForm.description}
+            onChange={(e) => handleReceiptFormChange('description', e.target.value)}
+          />
+        </label>
+        <label>
+          Receipt date
+          <input
+            type="date"
+            value={receiptForm.date}
+            onChange={(e) => handleReceiptFormChange('date', e.target.value)}
+          />
+        </label>
+        <div className="form-actions">
+          <button type="submit" className="primary-button">
+            Upload receipt
+          </button>
+        </div>
+      </form>
+
+      <div className="receipt-list">
+        <h3>Uploaded receipts</h3>
+        {receipts.length ? (
+          <table className="receipt-table">
+            <thead>
+              <tr>
+                <th>Stored file</th>
+                <th>Store</th>
+                <th>Description</th>
+                <th>Date</th>
+                <th>Uploaded</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {receipts.map((receipt) => {
+                const fileUrl =
+                  receipt.fileUrl ||
+                  receipt.url ||
+                  receipt.downloadUrl ||
+                  receipt.receiptUrl ||
+                  receipt.filePath ||
+                  receipt.path ||
+                  null;
+                const fileName = receipt.storedFileName || receipt.fileName || receipt.originalName || 'Receipt file';
+
+                return (
+                  <tr key={receipt.id}>
+                    <td>{fileName}</td>
+                    <td>{receipt.storeName}</td>
+                    <td>{receipt.description || '—'}</td>
+                    <td>{receipt.date}</td>
+                    <td>{receipt.uploadedAt}</td>
+                    <td>
+                      {receipt.id ? (
+                        <button className="link-button" type="button" onClick={() => downloadReceiptFile(receipt.id)}>
+                          View
+                        </button>
+                      ) : fileUrl ? (
+                        <a className="link-button" href={fileUrl} target="_blank" rel="noreferrer">
+                          View
+                        </a>
+                      ) : (
+                        <span>No file link</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        ) : (
+          <p>No receipts uploaded yet.</p>
+        )}
+      </div>
     </section>
   );
 
@@ -544,12 +929,6 @@ function App() {
         <h3>Low Stock Alerts</h3>
         <p>{lowStockCount}</p>
       </div>
-      {isAdmin && (
-        <div className="stat-card">
-          <h3>Total Users</h3>
-          <p>{users.length}</p>
-        </div>
-      )}
       <div className="stat-card">
         <h3>Active DB</h3>
         <p>{dbMode.toUpperCase()}</p>
@@ -564,16 +943,54 @@ function App() {
           </button>
         )}
       </div>
-      <div className="recent-card">
-        <h3>Recently Added Items</h3>
-        {recentItems.length ? (
+
+      {userNotifications.length > 0 && (
+        <div className="notification-card">
+          <h3>Your notifications</h3>
           <ul>
-            {recentItems.map((product) => (
-              <li key={product.id}>{product.name}</li>
+            {userNotifications.map((note) => (
+              <li key={note.id} className="notification-item">
+                <div>
+                  {note.message} <span className="notification-time">({note.receivedAt})</span>
+                </div>
+                <button
+                  type="button"
+                  className="link-button small-button"
+                  onClick={() => handleDismissNotification(note.id)}
+                >
+                  Mark picked up
+                </button>
+              </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      <div className="recent-card">
+        <h3>Low Stock Items</h3>
+        {lowStockItems.length ? (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Quantity</th>
+                <th>Location</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lowStockItems.map((product) => (
+                <tr key={product.id} className={product.quantity <= (product.lowStockThreshold ?? 10) ? 'low-stock' : ''}>
+                  <td>{product.name}</td>
+                  <td>{product.category}</td>
+                  <td>{product.quantity}</td>
+                  <td>{product.location || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         ) : (
-          <p>No inventory yet.</p>
+          <p>No low stock items right now.</p>
         )}
       </div>
     </section>
@@ -629,6 +1046,7 @@ function App() {
         {page === 'product' && productPageSection}
         {page === 'product-form' && productFormSection}
         {page === 'users' && usersSection}
+        {page === 'receipts' && isAdmin && receiptsSection}
         {page === 'metrics' && metricsSection}
         {page === 'profile' && profileSection}
       </main>

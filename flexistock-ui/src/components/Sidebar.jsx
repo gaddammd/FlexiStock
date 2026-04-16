@@ -3,12 +3,15 @@ import React from 'react';
 export default function Sidebar({ page, setPage, isAdmin, logout, user, handleLoadUsers }) {
   return (
     <aside className="sidebar">
-      <div className="brand">FlexiStock</div>
-      <div className="sidebar-user">
-        <p>{user?.name ?? 'Guest'}</p>
-        <p className="sidebar-role">{user?.role ?? 'User'}</p>
+      <div>
+        <div className="brand">FlexiStock</div>
+        <div className="sidebar-user">
+          <p>{user?.name ?? 'Guest'}</p>
+          <p className="sidebar-role">{user?.role ?? 'User'}</p>
+        </div>
       </div>
-      <nav>
+
+      <nav className="sidebar-nav">
         <button className={page === 'dashboard' ? 'active' : ''} onClick={() => setPage('dashboard')}>
           Dashboard
         </button>
@@ -21,6 +24,11 @@ export default function Sidebar({ page, setPage, isAdmin, logout, user, handleLo
           </button>
         )}
         {isAdmin && (
+          <button className={page === 'receipts' ? 'active' : ''} onClick={() => setPage('receipts')}>
+            Receipts
+          </button>
+        )}
+        {isAdmin && (
           <button className={page === 'metrics' ? 'active' : ''} onClick={() => setPage('metrics')}>
             Metrics
           </button>
@@ -28,10 +36,13 @@ export default function Sidebar({ page, setPage, isAdmin, logout, user, handleLo
         <button className={page === 'profile' ? 'active' : ''} onClick={() => setPage('profile')}>
           Profile
         </button>
-        <button className="danger" onClick={logout}>
+      </nav>
+
+      <div className="sidebar-footer">
+        <button className="danger logout-button" onClick={logout}>
           Logout
         </button>
-      </nav>
+      </div>
     </aside>
   );
 }

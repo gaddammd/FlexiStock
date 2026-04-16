@@ -49,6 +49,7 @@ export const validateToken = async (token) => {
 };
 
 export const inventoryUrl = (dbMode) => `${inventoryApiBase}/api/v1/${dbMode}`;
+export const receiptsUrl = (dbMode) => `${inventoryUrl(dbMode)}/receipts`;
 
 export const fetchProducts = async (dbMode) => {
   return request(`${inventoryUrl(dbMode)}/products`);
@@ -105,4 +106,38 @@ export const requestAdminAccess = async (token) => {
     method: "POST",
     headers: { "X-Auth-Token": token },
   });
+};
+
+export const fetchReceipts = async (token, dbMode) => {
+  return request(receiptsUrl(dbMode), {
+    method: "GET",
+    headers: { "X-Auth-Token": token },
+  });
+};
+
+export const uploadReceipt = async (token, formData, dbMode) => {
+  const response = await fetch(receiptsUrl(dbMode), {
+    method: "POST",
+    headers: {
+      "X-Auth-Token": token,
+    },
+    body: formData,
+  });
+
+  const text = await response.text();
+  let body = null;
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch (err) {
+      body = { message: text };
+    }
+  }
+
+  if (!response.ok) {
+    const message = body?.message || body?.error || response.statusText;
+    throw new Error(message || "Request failed");
+  }
+
+  return body;
 };
