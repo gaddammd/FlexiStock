@@ -404,6 +404,38 @@
   gap: 12px;
 }
 
+.pagination-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pagination-controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+}
+
+.pagination-controls button {
+  min-width: 44px;
+  padding: 8px 12px;
+}
+
+.pagination-controls span {
+  font-weight: 600;
+}
+
 .control-chip {
   display: flex;
   align-items: center;

@@ -19,7 +19,6 @@ import {
 import AuthShell from './components/AuthShell';
 import ProductDetail from './components/ProductDetail';
 import ProductForm from './components/ProductForm';
-import ReceiptUpload from './components/ReceiptUpload';
 import Sidebar from './components/Sidebar';
 
 const STORAGE_KEY = {
@@ -96,6 +95,8 @@ function App() {
   const [sortDirection, setSortDirection] = useState('asc');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterStock, setFilterStock] = useState('all');
+  const [inventoryPage, setInventoryPage] = useState(1);
+  const [inventoryPageSize, setInventoryPageSize] = useState(25);
   const [notifications, setNotifications] = useState({});
   const [receipts, setReceipts] = useState([]);
   const [receiptForm, setReceiptForm] = useState({
@@ -116,6 +117,21 @@ function App() {
 
     return () => clearTimeout(timer);
   }, [info]);
+
+  useEffect(() => {
+    if (page !== 'receipts') {
+      setReceiptForm({
+        file: null,
+        storeName: '',
+        description: '',
+        date: new Date().toISOString().slice(0, 10),
+      });
+    }
+  }, [page]);
+
+  useEffect(() => {
+    setError('');
+  }, [page]);
 
   const isAdmin = useMemo(() => user?.role?.toLowerCase() === 'admin', [user]);
   const categories = useMemo(() => {
@@ -179,6 +195,22 @@ function App() {
       return direction * aValue.localeCompare(bValue);
     });
   }, [products, searchQuery, filterCategory, filterStock, sortKey, sortDirection]);
+
+  const inventoryPageCount = Math.max(1, Math.ceil(displayProducts.length / inventoryPageSize));
+  const paginatedProducts = useMemo(() => {
+    const start = (inventoryPage - 1) * inventoryPageSize;
+    return displayProducts.slice(start, start + inventoryPageSize);
+  }, [displayProducts, inventoryPage, inventoryPageSize]);
+
+  useEffect(() => {
+    setInventoryPage(1);
+  }, [searchQuery, filterCategory, filterStock, sortKey, sortDirection, inventoryPageSize]);
+
+  useEffect(() => {
+    if (inventoryPage > inventoryPageCount) {
+      setInventoryPage(inventoryPageCount);
+    }
+  }, [inventoryPage, inventoryPageCount]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY.dbMode, dbMode);
@@ -651,6 +683,62 @@ function App() {
         </div>
       </div>
 
+      <div className="pagination-summary">
+        <div>{displayProducts.length} results</div>
+        {displayProducts.length > inventoryPageSize && (
+          <div className="pagination-controls">
+            <label>
+              Rows per page:
+              <select
+                value={inventoryPageSize}
+                onChange={(e) => setInventoryPageSize(Number(e.target.value))}
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              className="secondary-button small-button"
+              disabled={inventoryPage === 1}
+              onClick={() => setInventoryPage(1)}
+            >
+              First
+            </button>
+            <button
+              type="button"
+              className="secondary-button small-button"
+              disabled={inventoryPage === 1}
+              onClick={() => setInventoryPage((prev) => Math.max(1, prev - 1))}
+              aria-label="Previous page"
+            >
+              {'<<'}
+            </button>
+            <span>
+              Page {inventoryPage} of {inventoryPageCount}
+            </span>
+            <button
+              type="button"
+              className="secondary-button small-button"
+              disabled={inventoryPage === inventoryPageCount}
+              onClick={() => setInventoryPage((prev) => Math.min(inventoryPageCount, prev + 1))}
+              aria-label="Next page"
+            >
+              {'>>'}
+            </button>
+            <button
+              type="button"
+              className="secondary-button small-button"
+              disabled={inventoryPage === inventoryPageCount}
+              onClick={() => setInventoryPage(inventoryPageCount)}
+            >
+              Last
+            </button>
+          </div>
+        )}
+      </div>
+
       {loading ? (
         <div className="loading">Loading products…</div>
       ) : (
@@ -666,7 +754,7 @@ function App() {
           </thead>
           <tbody>
             {displayProducts.length ? (
-              displayProducts.map((product) => (
+              paginatedProducts.map((product) => (
                 <tr key={product.id} className={product.quantity <= (product.lowStockThreshold ?? 10) ? 'low-stock' : ''}>
                   <td>{product.name}</td>
                   <td>{product.category}</td>
@@ -1041,14 +1129,28 @@ function App() {
         {error && <div className="badge error">{error}</div>}
         {info && <div className="badge info">{info}</div>}
 
-        {page === 'dashboard' && dashboardSection}
-        {page === 'inventory' && inventorySection}
-        {page === 'product' && productPageSection}
-        {page === 'product-form' && productFormSection}
-        {page === 'users' && usersSection}
-        {page === 'receipts' && isAdmin && receiptsSection}
-        {page === 'metrics' && metricsSection}
-        {page === 'profile' && profileSection}
+        {(() => {
+          switch (page) {
+            case 'dashboard':
+              return dashboardSection;
+            case 'inventory':
+              return inventorySection;
+            case 'product':
+              return productPageSection;
+            case 'product-form':
+              return productFormSection;
+            case 'users':
+              return usersSection;
+            case 'receipts':
+              return isAdmin ? receiptsSection : dashboardSection;
+            case 'metrics':
+              return metricsSection;
+            case 'profile':
+              return profileSection;
+            default:
+              return dashboardSection;
+          }
+        })()}
       </main>
     </div>
   );
