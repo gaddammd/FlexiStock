@@ -49,7 +49,7 @@ export const validateToken = async (token) => {
 };
 
 export const inventoryUrl = (dbMode) => `${inventoryApiBase}/api/v1/${dbMode}`;
-export const receiptsUrl = (dbMode) => `${inventoryUrl(dbMode)}/receipts`;
+export const receiptsUrl = () => `${inventoryUrl('nosql')}/receipts`;
 
 export const fetchProducts = async (dbMode) => {
   return request(`${inventoryUrl(dbMode)}/products`);
@@ -108,15 +108,15 @@ export const requestAdminAccess = async (token) => {
   });
 };
 
-export const fetchReceipts = async (token, dbMode) => {
-  return request(receiptsUrl(dbMode), {
+export const fetchReceipts = async (token) => {
+  return request(receiptsUrl(), {
     method: "GET",
     headers: { "X-Auth-Token": token },
   });
 };
 
-export const uploadReceipt = async (token, formData, dbMode) => {
-  const response = await fetch(receiptsUrl(dbMode), {
+export const uploadReceipt = async (token, formData) => {
+  const response = await fetch(receiptsUrl(), {
     method: "POST",
     headers: {
       "X-Auth-Token": token,

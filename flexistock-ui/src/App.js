@@ -312,14 +312,14 @@ function App() {
     setLoading(true);
     setError('');
     try {
-      const result = await fetchReceipts(token, dbMode);
+      const result = await fetchReceipts(token);
       setReceipts(result || []);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [token, dbMode]);
+  }, [token]);
 
   useEffect(() => {
     if (!token) {
@@ -358,7 +358,7 @@ function App() {
     formData.append('receiptDate', receiptForm.date);
 
     try {
-      const uploadedReceipt = await uploadReceipt(token, formData, dbMode);
+      const uploadedReceipt = await uploadReceipt(token, formData);
       setReceipts((prev) => [uploadedReceipt, ...prev]);
       setReceiptForm({
         file: null,
@@ -376,7 +376,7 @@ function App() {
       setError('');
       setLoading(true);
       try {
-        const response = await fetch(`${receiptsUrl(dbMode)}/${receiptId}/file`, {
+        const response = await fetch(`${receiptsUrl()}/${receiptId}/file`, {
           method: 'GET',
           headers: {
             'X-Auth-Token': token,
@@ -428,6 +428,10 @@ function App() {
     const nextMode = dbMode === 'sql' ? 'nosql' : 'sql';
     setDbMode(nextMode);
     setInfo(`Switched inventory mode to ${nextMode.toUpperCase()}`);
+
+    if (page === 'receipts' && isAdmin) {
+      loadReceipts();
+    }
   };
 
   const openAddProduct = () => {
@@ -597,10 +601,11 @@ function App() {
     setError('');
     setInfo('');
     try {
-      await requestAdminAccess(token);
+      const updatedUser = await requestAdminAccess(token);
+      const nextUser = updatedUser?.adminAccessRequested !== undefined ? updatedUser : { ...user, adminAccessRequested: true };
+      setUser(nextUser);
+      localStorage.setItem(STORAGE_KEY.user, JSON.stringify(nextUser));
       setInfo('Admin access requested');
-      setUser((prev) => ({ ...prev, adminAccessRequested: true }));
-      localStorage.setItem(STORAGE_KEY.user, JSON.stringify({ ...user, adminAccessRequested: true }));
     } catch (err) {
       setError(err.message);
     }
@@ -616,9 +621,14 @@ function App() {
         <h2>Inventory</h2>
         <div className="content-actions">
           {isAdmin && (
-            <button className="secondary-button" onClick={openAddProduct}>
-              Add New Item
-            </button>
+            <>
+              <button className="secondary-button" onClick={openAddProduct}>
+                Add New Item
+              </button>
+              <button className="toggle-button" onClick={handleDbModeToggle}>
+                Switch to {dbMode === 'sql' ? 'NoSQL' : 'SQL'}
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -1117,13 +1127,10 @@ function App() {
         <div className="top-bar">
           <div>
             <h1>{page.charAt(0).toUpperCase() + page.slice(1)}</h1>
-            <p className="top-note">Database mode: {dbMode.toUpperCase()}</p>
+            <p className="top-note">
+              Database mode: {dbMode.toUpperCase()}
+            </p>
           </div>
-          {isAdmin && (
-            <button className="toggle-button" onClick={handleDbModeToggle}>
-              Switch to {dbMode === 'sql' ? 'NoSQL' : 'SQL'}
-            </button>
-          )}
         </div>
 
         {error && <div className="badge error">{error}</div>}
