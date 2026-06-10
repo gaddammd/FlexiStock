@@ -1,70 +1,115 @@
-# Getting Started with Create React App
+# FlexiStock UI
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern, flexible inventory management system built with React. FlexiStock provides a comprehensive solution for managing products, tracking stock levels, handling receipts, and managing user access with role-based permissions.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- **Product Management**: Create, update, delete, and manage product inventory
+- **Stock Tracking**: Monitor product quantities and set low stock thresholds
+- **Receipt Management**: Upload and track purchase receipts
+- **User Authentication**: Secure login and signup with token-based authentication
+- **Role-Based Access Control**: Admin and user roles with permission management
+- **Multi-Database Support**: Flexible database mode configuration
+- **Product Attributes**: Add custom attributes to products for better organization
+- **Dashboard**: Overview of inventory status and key metrics
 
-### `npm start`
+## Prerequisites
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- Node.js (v14 or higher)
+- npm (v6 or higher)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Getting Started
 
-### `npm test`
+### Installation
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. Clone the repository or navigate to the project directory:
+```bash
+cd flexistock-ui
+```
 
-### `npm run build`
+2. Install dependencies:
+```bash
+npm install
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Running the Application
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Start the development server:
+```bash
+npm start
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The application will open in your browser at [http://localhost:3000](http://localhost:3000). The page will reload when you make changes, and you'll see lint errors in the console.
 
-### `npm run eject`
+### Building for Production
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Create an optimized production build:
+```bash
+npm run build
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+This builds the app for production to the `build` folder. The build is minified and filenames include hashes for optimal performance.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Running Tests
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Launch the test runner in interactive watch mode:
+```bash
+npm test
+```
+
+## Project Structure
+
+```
+src/
+├── App.js              # Main application component
+├── App.css             # Main styling
+├── index.js            # React entry point
+├── api/                # API integration and utilities
+│   └── index.js        # API endpoints and requests
+├── components/         # React components
+│   ├── AuthShell.jsx   # Authentication wrapper
+│   ├── ProductForm.jsx # Product creation/editing form
+│   ├── ProductDetail.jsx # Product detail view
+│   ├── ReceiptUpload.jsx # Receipt upload component
+│   └── Sidebar.jsx     # Navigation sidebar
+└── setupProxy.js       # Proxy configuration for backend API
+```
+
+## Key Components
+
+- **AuthShell**: Handles user authentication and session management
+- **ProductForm**: Form for creating and editing products with custom attributes
+- **ProductDetail**: Displays detailed product information
+- **ReceiptUpload**: File upload functionality for receipts
+- **Sidebar**: Navigation and user menu
+
+## Configuration
+
+The application uses localStorage to persist user session data:
+- `flexistock-token`: Authentication token
+- `flexistock-user`: User profile information
+- `flexistock-db-mode`: Database mode configuration
+
+## API Integration
+
+The application communicates with a backend API through the `api/index.js` module. Key endpoints include:
+- Authentication (login, signup, validation)
+- Product operations (CRUD)
+- Receipt management (upload, retrieve)
+- User management (roles, permissions)
+
+## Development Notes
+
+- The app uses React hooks for state management
+- Authentication tokens are stored in localStorage
+- The proxy is configured to forward API requests to the backend server
+- Custom attributes can be added to products for flexible data modeling
 
 ## Learn More
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started)
+- [React documentation](https://reactjs.org/)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Troubleshooting
 
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+If the build fails to minify or you encounter other issues, refer to the [Create React App troubleshooting guide](https://facebook.github.io/create-react-app/docs/troubleshooting).
